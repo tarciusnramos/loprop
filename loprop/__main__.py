@@ -105,7 +105,9 @@ def main():
         "--frequencies",
         dest="freqs",
         default=None,
-        help="Dynamic polarizabilities (0.)",
+        nargs="+",
+        type=float,
+        help="Dynamic (hyper)polarizabilities (0.)",
     )
 
     parser.add_argument(
@@ -124,6 +126,14 @@ def main():
         type=int,
         default=0,
         help="Localized hyperpolarizabilities (1=isotropic, 2=full)",
+    )
+    
+    parser.add_argument(
+        "--shg",
+        dest="shg",
+        default=False,
+        action='store_true',
+        help="Set only second harmonic generation vectors",
     )
 
     parser.add_argument(
@@ -232,7 +242,7 @@ def main():
         scf_checkpoint_file = None
 
     if args.freqs:
-        freqs = map(float, args.freqs.split())
+        freqs = args.freqs
     else:
         freqs = (0.0,)
 
@@ -260,6 +270,7 @@ def main():
         imag_pol=(args.damping == "imag"),
         checkpoint_file=checkpoint_file,
         scf_checkpoint_file=scf_checkpoint_file,
+        shg=args.shg,
     )
 
     print(

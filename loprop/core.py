@@ -162,9 +162,9 @@ def header(string, output=None):
     print("\n%s\n%s\n%s" % (border, string, border))
 
 
-def output_beta(beta, dip=None, fmt="%12.6f"):
+def output_beta(beta, dip=None, fmt="%12.6f", freq=None):
     """Repeated output format for b(x; yz)"""
-    print("Hyperpolarizability")
+    print("Hyperpolarizability (w=%g)" % freq)
     print("beta(:, xx xy xz yy yz zz)")
     print("--------------------------")
     print("beta(x, *) " + (6 * fmt) % tuple(beta[0, :]))
@@ -993,7 +993,7 @@ class MolFrag(abc.ABC):
         return self._dQa
 
     @property
-    def d2Qa(self):
+    def d2Qa(self, **kwargs):
         """Charge shift per atom"""
         if self._d2Qa is not None:
             return self._d2Qa
@@ -1003,8 +1003,12 @@ class MolFrag(abc.ABC):
         D2k = self.D2k
 
         # static
-        wb = wc = 0.0
-        d2Qa = full.matrix((1, noa, 6))
+        # wb = wc = 0.0
+        # assuming second harmonic generation
+        bcfreqs = kwargs.get("bcfreqs", (self.freqs[0], self.freqs[0]))
+        wb, wc = bcfreqs
+
+        d2Qa = full.matrix((self.nfreqs, noa, 6))
 
         lab = ["XDIPLEN ", "YDIPLEN ", "ZDIPLEN "]
         qrlab = [lab[j] + lab[i] for i in range(3) for j in range(i, 3)]
@@ -1012,7 +1016,8 @@ class MolFrag(abc.ABC):
         for a in range(noa):
             for il, l in enumerate(qrlab):
                 il = qrlab.index(l)
-                d2Qa[0, a, il] = -D2k[(l, wb, wc)].subblock[a][a].tr()
+                for iw in self.rfreqs:
+                    d2Qa[iw, a, il] = -D2k[(l, wb, wc)].subblock[a][a].tr()
         self._d2Qa = d2Qa
         return self._d2Qa
 
@@ -1343,7 +1348,7 @@ class MolFrag(abc.ABC):
                     if self._Bab is not None:
                         for iw, w in enumerate(self.freqs):
                             Bsym = Bab[iw, :, :, a, b] + Bab[iw, :, :, b, a]
-                            output_beta(Bsym, self.Da[:, a])
+                            output_beta(Bsym, self.Da[:, a], freq=w)
 
                 header("Atom    %d" % (a + 1), output=output)
                 print("Atom center:       " + (3 * fmt) % tuple(R[a, :] * xconv))
@@ -1373,7 +1378,7 @@ class MolFrag(abc.ABC):
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
                         Bsym = Bab[iw, :, :, a, a]
-                        output_beta(Bsym, Da[:, a])
+                        output_beta(Bsym, self.Da[:, a], freq=w)
 
         else:
             for a in range(noa):
@@ -1387,6 +1392,11 @@ class MolFrag(abc.ABC):
                     print("Total charge:        " + fmt % (Z[a] + Qa[a]))
                 if self._Dab is not None:
                     print("Electronic dipole    " + (3 * fmt) % tuple(self.Da[:, a]))
+                    Dc = Qa[a] * (R[a, :] - Rc)
+                    print("Gauge   dipole       " + (3 * fmt) % tuple(Dc))
+                    Dm = self.Da[:,a].view(full.matrix)
+                    DT = Dm + Dc
+                    print("Total   dipole       " + (3 * fmt) % tuple(DT))
                     print(
                         "Electronic dipole norm"
                         + (fmt) % self.Da[:, a].view(full.matrix).norm2()
@@ -1407,7 +1417,7 @@ class MolFrag(abc.ABC):
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
                         Bsym = Ba[iw, :, :, a].view(full.matrix)
-                        output_beta(Bsym, self.Da[:, a])
+                        output_beta(Bsym, self.Da[:, a], freq=w)
         #
         # Total molecular properties
         #
@@ -1454,7 +1464,7 @@ class MolFrag(abc.ABC):
         if self._Bab is not None:
             for iw, w in enumerate(self.freqs):
                 Bm = self.Bm[iw]
-                output_beta(Bm, dip=Dm, fmt=fmt)
+                output_beta(Bm, dip=Dm, fmt=fmt, freq=w)
 
     def output_template(
         self,

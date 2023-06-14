@@ -21,6 +21,7 @@ class MolFragDalton(MolFrag):
         assert sirifc.sirifc(name=self.sirifc).nsym == 1
         self.get_basis_info()
         self.get_molecule_info()
+        self.shg = kwargs.get("shg")
 
     def get_basis_info(self):
         """
@@ -176,7 +177,7 @@ class MolFragDalton(MolFrag):
         T = self.T
         cpa = self.cpa
 
-        Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
+        Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir, shg=self.shg)
         # print("Dkao.keys", Dkao.keys())
         _D2k = {
             lw: (T.I @ Dkao[lw] @ T.I.T).subblocked(cpa, cpa) for lw in Dkao
