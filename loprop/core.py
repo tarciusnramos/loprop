@@ -1323,11 +1323,11 @@ class MolFrag(abc.ABC):
                     if self._Dab is not None:
                         print(
                             "Electronic dipole    "
-                            + (3 * fmt) % tuple(Dab[:, a, b] + Dab[:, b, a])
+                            + (3 * fmt) % tuple(self.Dab[:, a, b] + self.Dab[:, b, a])
                         )
                         print(
                             "Electronic dipole norm"
-                            + fmt % (Dab[:, a, b] + Dab[:, b, a]).norm2()
+                            + fmt % (self.Dab[:, a, b] + self.Dab[:, b, a]).norm2()
                         )
                     if self._QUab is not None:
                         raise NotImplementedError
@@ -1357,8 +1357,8 @@ class MolFrag(abc.ABC):
                     print("Electronic charge:   " + fmt % Qab[a, a])
                     print("Total charge:        " + fmt % (Z[a] + Qab[a, a]))
                 if self._Dab is not None:
-                    print("Electronic dipole    " + (3 * fmt) % tuple(Dab[:, a, a]))
-                    print("Electronic dipole norm" + fmt % Dab[:, a, a].norm2())
+                    print("Electronic dipole    " + (3 * fmt) % tuple(self.Dab[:, a, a]))
+                    print("Electronic dipole norm" + fmt % self.Dab[:, a, a].norm2())
                 if self._QUab is not None:
                     print("Electronic quadrupole" + (6 * fmt) % tuple(QUab[:, a, a]))
                 if self._Aab is not None:
